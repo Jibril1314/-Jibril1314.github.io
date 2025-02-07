@@ -2,8 +2,6 @@
 <html>
 <head>
     <title>免费AI聊天</title>
-    <!-- 引入transformers.js -->
-    <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.4.0"></script>
     <style>
         body {
             max-width: 800px;
@@ -33,6 +31,11 @@
         .bot-message {
             background: #fff;
             border: 1px solid #eee;
+        }
+        .loading-message {
+            background: #f9f9f9;
+            color: #2196F3;
+            text-align: center;
         }
         #input-container {
             display: flex;
@@ -65,18 +68,14 @@
     </div>
 
     <script>
-        let pipe; // 保存AI管道实例
-        
-        // 初始化AI模型（使用轻量级对话模型）
-        async function initModel() {
-            document.getElementById('send-btn').disabled = true;
-            pipe = await pipeline('text2text-generation', 'Xenova/LaMini-Flan-T5-248M', {
-                progress_callback: (info) => {
-                    console.log(`加载进度: ${(info.progress * 100).toFixed(1)}%`);
-                }
-            });
-            document.getElementById('send-btn').disabled = false;
-            addMessage('系统', '模型加载完成，可以开始聊天！', 'bot');
+        // 假设DEEPSEEK API的URL
+        const DEEPSEEK_API_URL = 'https://api.siliconflow.cn/v1/chat/completions';
+        // 假设DEEPSEEK API密钥
+        const DEEPSEEK_API_KEY = 'sk-knnwiupdkrjuvycrgduimnbttvxzkjbszdneggkzpwjxuxzi';
+
+        // 页面加载时将焦点设置到输入框
+        window.onload = function() {
+            document.getElementById('user-input').focus();
         }
 
         // 添加消息到聊天框
@@ -105,21 +104,63 @@
             // 禁用发送按钮，防止重复发送
             document.getElementById('send-btn').disabled = true;
 
+            // 显示加载指示器
+            addMessage('系统', '正在生成回复...', 'loading');
+
             try {
-                // 调用AI模型生成回复
-                const response = await pipe(userInput);
-                const botReply = response[0].generated_text.trim();
+                // 构造符合API要求的请求体
+                const requestBody = {
+                    messages: [
+                        {
+                            role: 'user',
+                            content: userInput
+                        }
+                    ]
+                };
+
+                // 调用DEEPSEEK API生成回复
+                const response = await fetch(DEEPSEEK_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const botReply = data.reply; // 假设API返回的回复字段是'reply'
 
                 // 添加AI回复到聊天框
                 addMessage('系统', botReply, 'bot');
             } catch (error) {
                 console.error('生成回复时出错:', error);
-                addMessage('系统', '抱歉，生成回复时出错，请稍后再试。', 'bot');
+                addMessage('系统', `抱歉，生成回复时出错：${error.message}`, 'bot');
             } finally {
                 // 启用发送按钮
                 document.getElementById('send-btn').disabled = false;
+                // 隐藏加载指示器
+                const loadingMessages = document.querySelectorAll('.loading-message');
+                loadingMessages.forEach(msg => msg.remove());
             }
         }
+
+        // 输入框内容变化时启用/禁用发送按钮
+        document.getElementById('user-input').addEventListener('input', function() {
+            document.getElementById('send-btn').disabled = !this.value.trim();
+        });
+
+        // 添加键盘事件监听器，监听 Enter 键按下事件
+        document.getElementById('user-input').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // 阻止默认的换行行为
+                sendMessage();
+            }
+        });
     </script>
 </body>
 </html>
