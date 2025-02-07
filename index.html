@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>免费AI聊天</title>
+    <!-- 引入transformers.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.4.0"></script>
+    <style>
+        body {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        #chat-container {
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            height: 500px;
+            overflow-y: auto;
+            padding: 15px;
+            margin-bottom: 20px;
+            background: #f9f9f9;
+        }
+        .message {
+            margin: 8px 0;
+            padding: 10px;
+            border-radius: 8px;
+            max-width: 70%;
+        }
+        .user-message {
+            background: #e3f2fd;
+            margin-left: auto;
+        }
+        .bot-message {
+            background: #fff;
+            border: 1px solid #eee;
+        }
+        #input-container {
+            display: flex;
+            gap: 10px;
+        }
+        #user-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 12px 25px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background: #90caf9;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container"></div>
+    <div id="input-container">
+        <input type="text" id="user-input" placeholder="输入你的消息...">
+        <button onclick="sendMessage()" id="send-btn">发送</button>
+    </div>
+
+    <script>
+        let pipe; // 保存AI管道实例
+        
+        // 初始化AI模型（使用轻量级对话模型）
+        async function initModel() {
+            document.getElementById('send-btn').disabled = true;
+            pipe = await pipeline('text2text-generation', 'Xenova/LaMini-Flan-T5-248M', {
+                progress_callback: (info) => {
+                    console.log(`加载进度: ${(info.progress * 100).toFixed(1)}%`);
+                }
+            });
+            document.getElementById('send-btn').disabled = false;
+            addMessage('系统', '模型加载完成，可以开始聊天！', 'bot');
+        }
+
+        // 添加消息到聊天框
+        function addMessage(sender, text, type) {
+            const container = document.getElementById('chat-container');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${type}-message`;
+            msgDiv.innerHTML = `<strong>${sender}:</strong> ${text}`;
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight; // 自动滚动到底部
+        }
+
+        // 发送消息处理
+        async function sendMessage...
