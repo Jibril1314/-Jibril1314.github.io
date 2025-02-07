@@ -63,6 +63,21 @@
             transform: translateX(-50%);
             color: #2196F3;
         }
+        // 添加加载动画
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2196F3;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -115,12 +130,15 @@
             try {
                 // 构造符合API要求的请求体
                 const requestBody = {
+                    model: "deepseek-chat",    // 添加模型参数
                     messages: [
-                        {
-                            role: 'user',
+                        { 
+                            role: "user",
                             content: userInput
                         }
-                    ]
+                    ],
+                    temperature: 0.7,         // 可选参数
+                    stream: false             // 非流式响应
                 };
 
                 // 调用DEEPSEEK API生成回复
@@ -138,7 +156,8 @@
                 }
 
                 const data = await response.json();
-                const botReply = data.reply; // 假设API返回的回复字段是'reply'
+                // 修正后的回复解析方式（假设返回结构类似OpenAI格式）
+                const botReply = data.choices[0].message.content;
 
                 // 添加AI回复到聊天框
                 addMessage('系统', botReply, 'bot');
@@ -168,6 +187,9 @@
     </script>
 
     <!-- 将加载指示器移动到聊天框内 -->
-    <div id="loading-indicator">正在生成回复...</div>
+    <div id="loading-indicator" style="display: none;">
+        <div class="loader"></div>
+        正在思考中...
+    </div>
 </body>
 </html>
