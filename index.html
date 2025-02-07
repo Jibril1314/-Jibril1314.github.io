@@ -12,11 +12,12 @@
         #chat-container {
             border: 1px solid #e0e0e0;
             border-radius: 10px;
-            height: 500px;
+            height: 450px; /* 调整聊天框高度以适应加载指示器 */
             overflow-y: auto;
             padding: 15px;
             margin-bottom: 20px;
             background: #f9f9f9;
+            position: relative; /* 添加相对定位以便加载指示器居中 */
         }
         .message {
             margin: 8px 0;
@@ -31,11 +32,6 @@
         .bot-message {
             background: #fff;
             border: 1px solid #eee;
-        }
-        .loading-message {
-            background: #f9f9f9;
-            color: #2196F3;
-            text-align: center;
         }
         #input-container {
             display: flex;
@@ -58,6 +54,15 @@
         button:disabled {
             background: #90caf9;
         }
+        /* 修改加载指示器样式 */
+        #loading-indicator {
+            display: none;
+            position: absolute;
+            bottom: 15px; /* 距离底部15px */
+            left: 50%;
+            transform: translateX(-50%);
+            color: #2196F3;
+        }
     </style>
 </head>
 <body>
@@ -69,9 +74,9 @@
 
     <script>
         // 假设DEEPSEEK API的URL
-        const DEEPSEEK_API_URL = 'https://api.siliconflow.cn/v1/chat/completions';
+        const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
         // 假设DEEPSEEK API密钥
-        const DEEPSEEK_API_KEY = 'sk-knnwiupdkrjuvycrgduimnbttvxzkjbszdneggkzpwjxuxzi';
+        const DEEPSEEK_API_KEY = 'sk-ef1445467cbf4fde968eded11269fc0d';
 
         // 页面加载时将焦点设置到输入框
         window.onload = function() {
@@ -105,7 +110,7 @@
             document.getElementById('send-btn').disabled = true;
 
             // 显示加载指示器
-            addMessage('系统', '正在生成回复...', 'loading');
+            document.getElementById('loading-indicator').style.display = 'block';
 
             try {
                 // 构造符合API要求的请求体
@@ -144,8 +149,7 @@
                 // 启用发送按钮
                 document.getElementById('send-btn').disabled = false;
                 // 隐藏加载指示器
-                const loadingMessages = document.querySelectorAll('.loading-message');
-                loadingMessages.forEach(msg => msg.remove());
+                document.getElementById('loading-indicator').style.display = 'none';
             }
         }
 
@@ -162,5 +166,8 @@
             }
         });
     </script>
+
+    <!-- 将加载指示器移动到聊天框内 -->
+    <div id="loading-indicator">正在生成回复...</div>
 </body>
 </html>
