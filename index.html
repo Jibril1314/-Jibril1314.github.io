@@ -18,6 +18,7 @@
             margin-bottom: 20px;
             background: #f9f9f9;
             position: relative; /* 添加相对定位以便加载指示器居中 */
+            background-color: #f0f8ff; /* 增加背景颜色 */
         }
         .message {
             margin: 8px 0;
@@ -42,6 +43,10 @@
             padding: 12px;
             border: 1px solid #ccc;
             border-radius: 5px;
+            transition: border-color 0.3s; /* 添加过渡效果 */
+        }
+        #user-input:focus {
+            border-color: #2196F3; /* 聚焦时改变边框颜色 */
         }
         button {
             padding: 12px 25px;
@@ -50,6 +55,10 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            transition: background 0.3s; /* 添加过渡效果 */
+        }
+        button:hover {
+            background: #1976d2; /* 悬停时改变背景颜色 */
         }
         button:disabled {
             background: #90caf9;
@@ -78,20 +87,45 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        #character-settings {
+            margin-bottom: 10px;
+            display: none; /* 默认隐藏角色设定 */
+            background-color: #e0f7fa; /* 增加背景颜色 */
+            padding: 15px;
+            border-radius: 5px;
+        }
+        #settings-tab {
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
-    <div id="chat-container"></div>
+    <div id="chat-container">
+        <div id="loading-indicator" style="display: none;">
+            <div class="loader"></div>
+            <span>正在思考中...</span>
+        </div>
+    </div>
     <div id="input-container">
         <input type="text" id="user-input" placeholder="输入你的消息...">
         <button onclick="sendMessage()" id="send-btn">发送</button>
+        <button onclick="toggleSettings()" id="settings-tab">编辑角色</button>
+    </div>
+
+    <!-- 添加角色设定输入框 -->
+    <div id="character-settings">
+        <label for="character-name">角色名称:</label>
+        <input type="text" id="character-name" placeholder="输入角色名称...">
+        <label for="character-description">角色描述:</label>
+        <textarea id="character-description" placeholder="输入角色描述..."></textarea>
+        <button onclick="saveCharacterSettings()">保存</button>
     </div>
 
     <script>
         // 假设DEEPSEEK API的URL
-        const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
+        const DEEPSEEK_API_URL = 'https://api.siliconflow.cn/v1/chat/completions';
         // 假设DEEPSEEK API密钥
-        const DEEPSEEK_API_KEY = 'sk-ef1445467cbf4fde968eded11269fc0d';
+        const DEEPSEEK_API_KEY = 'sk-knnwiupdkrjuvycrgduimnbttvxzkjbszdneggkzpwjxuxzi';
 
         // 页面加载时将焦点设置到输入框
         window.onload = function() {
@@ -108,12 +142,31 @@
             container.scrollTop = container.scrollHeight; // 自动滚动到底部
         }
 
-        // 发送消息处理
+        // 添加角色设定变量
+        let characterName = '系统';
+        let characterDescription = '';
+
+        // 打开角色编辑器
+        function openCharacterEditor() {
+        }
+
+        // 保存角色设定
+        function saveCharacterSettings() {
+            characterName = document.getElementById('character-name').value;
+            characterDescription = document.getElementById('character-description').value;
+            document.getElementById('character-settings').style.display = 'none'; // 隐藏设置面板
+        }
+
+        // 切换设置面板显示
+        function toggleSettings() {
+            const settingsPanel = document.getElementById('character-settings');
+            settingsPanel.style.display = settingsPanel.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // 修改sendMessage函数以包含角色设定信息
         async function sendMessage() {
             const userInput = document.getElementById('user-input').value;
-            if (!userInput.trim()) {
-                return; // 如果输入为空，则不发送
-            }
+            if (!userInput) return; // 如果输入为空，则不发送
 
             // 添加用户消息到聊天框
             addMessage('你', userInput, 'user');
@@ -130,15 +183,20 @@
             try {
                 // 构造符合API要求的请求体
                 const requestBody = {
-                    model: "deepseek-reasoner",    // 添加模型参数
+                    model: "deepseek-ai/DeepSeek-R1", // 修正后的正确模型名称
                     messages: [
+                        { 
+                            role: "system",
+                            content: characterName !== '系统' || characterDescription ? `你是一个名为${characterName}的角色${characterDescription ? '，描述如下：'+characterDescription : ''}` : ''
+                        },
                         { 
                             role: "user",
                             content: userInput
                         }
                     ],
-                    temperature: 0.7,         // 可选参数
-                    stream: false             // 非流式响应
+                    temperature: 0.7,
+                    max_tokens: 1024, // 添加token限制参数
+                    stream: false     
                 };
 
                 // 调用DEEPSEEK API生成回复
@@ -160,10 +218,10 @@
                 const botReply = data.choices[0].message.content;
 
                 // 添加AI回复到聊天框
-                addMessage('系统', botReply, 'bot');
+                addMessage(characterName, botReply, 'bot');
             } catch (error) {
                 console.error('生成回复时出错:', error);
-                addMessage('系统', `抱歉，生成回复时出错：${error.message}`, 'bot');
+                addMessage(characterName, `抱歉，生成回复时出错：${error.message}`, 'bot');
             } finally {
                 // 启用发送按钮
                 document.getElementById('send-btn').disabled = false;
@@ -186,10 +244,5 @@
         });
     </script>
 
-    <!-- 将加载指示器移动到聊天框内 -->
-    <div id="loading-indicator" style="display: none;">
-        <div class="loader"></div>
-        正在思考中...
-    </div>
 </body>
 </html>
